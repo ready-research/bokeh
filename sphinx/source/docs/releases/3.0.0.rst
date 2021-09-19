@@ -82,3 +82,14 @@ Distance Specs
 
 ``ScreenDistanceSpec`` and ``DataDistanceSpec`` are removed. Use ``SizeSpec``
 instead.
+
+bokehjs changes
+~~~~~~~~~~~~~~~
+
+``Figure.xaxis``, etc.
+......................
+
+``xaxis``, ``yaxis``, ``axis``, ``xgrid``, ``ygrid`` and ``grid`` attributes of
+``Figure`` now return a model proxy object, which mimics the behavior of bokeh's
+plotting API. Arrays of axes/grids can be obtaind using new ``xaxes``, ``yaxes``,
+``axes``, ``xgrids``, ``ygrids`` and ``grids`` attributes.

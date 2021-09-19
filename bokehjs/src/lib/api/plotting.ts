@@ -183,28 +183,94 @@ export namespace Figure {
   }
 }
 
+type PropsOf<T extends HasProps> = {
+  // TODO: writeonly/setter
+  [K in keyof T["properties"]]: T["properties"][K] extends Property<infer P> ? P : never
+}
+
+class ModelProxy<T extends HasProps> {
+  constructor(readonly models: T[]) {
+    const mapping: Map<string, Property<unknown>[]> = new Map()
+
+    for (const model of models) {
+      for (const prop of model) {
+        const {attr} = prop
+        if (!mapping.has(attr))
+          mapping.set(attr, [])
+        mapping.get(attr)!.push(prop)
+      }
+    }
+
+    for (const [name, props] of mapping) {
+      Object.defineProperty(this, name, {
+        get(this: Axis): never {
+          throw new Error("only setting values is supported")
+        },
+        set(this: Axis, value: unknown): Axis {
+          for (const prop of props) {
+            prop.obj.setv({[name]: value})
+          }
+          return this
+        },
+      })
+    }
+  }
+
+  each(fn: (model: T, i: number) => void): void {
+    let i = 0
+    for (const model of this.models) {
+      fn(model, i++)
+    }
+  }
+
+  *[Symbol.iterator](): Generator<T, void, undefined> {
+    yield* this.models
+  }
+}
+
 export class Figure extends Plot {
   static override __name__ = "Plot"
 
-  get xgrid(): Grid[] {
-    return this.center.filter((r): r is Grid => r instanceof Grid && r.dimension == 0)
-  }
-  get ygrid(): Grid[] {
-    return this.center.filter((r): r is Grid => r instanceof Grid && r.dimension == 1)
-  }
-
-  get xaxis(): Axis[] {
+  get xaxes(): Axis[] {
     return [...this.below, ...this.above].filter((r): r is Axis => r instanceof Axis)
   }
-  get yaxis(): Axis[] {
+  get yaxes(): Axis[] {
     return [...this.left, ...this.right].filter((r): r is Axis => r instanceof Axis)
   }
 
-  get grid(): Grid[] {
+  get xaxis(): ModelProxy<Axis> & PropsOf<Axis> {
+    return new ModelProxy(this.xaxes) as ModelProxy<Axis> & PropsOf<Axis>
+  }
+  get yaxis(): ModelProxy<Axis> & PropsOf<Axis> {
+    return new ModelProxy(this.yaxes) as ModelProxy<Axis> & PropsOf<Axis>
+  }
+
+  get axes(): Axis[] {
+    return [...this.below, ...this.above, ...this.left, ...this.right].filter((r): r is Axis => r instanceof Axis)
+  }
+  get axis(): ModelProxy<Axis> & PropsOf<Axis> {
+    return new ModelProxy(this.axes) as ModelProxy<Axis> & PropsOf<Axis>
+  }
+
+  get xgrids(): Grid[] {
+    return this.center.filter((r): r is Grid => r instanceof Grid && r.dimension == 0)
+  }
+  get ygrids(): Grid[] {
+    return this.center.filter((r): r is Grid => r instanceof Grid && r.dimension == 1)
+  }
+
+  get xgrid(): ModelProxy<Grid> & PropsOf<Grid> {
+    return new ModelProxy(this.xgrids) as ModelProxy<Grid> & PropsOf<Grid>
+  }
+  get ygrid(): ModelProxy<Grid> & PropsOf<Grid> {
+    return new ModelProxy(this.ygrids) as ModelProxy<Grid> & PropsOf<Grid>
+  }
+
+  get grids(): Grid[] {
     return this.center.filter((r): r is Grid => r instanceof Grid)
   }
-  get axis(): Axis[] {
-    return [...this.below, ...this.above, ...this.left, ...this.right].filter((r): r is Axis => r instanceof Axis)
+  get grid(): ModelProxy<Grid> & PropsOf<Grid> {
+    return new ModelProxy(this.grids) as ModelProxy<Grid> & PropsOf<Grid>
   }
 
   get legend(): Legend {
