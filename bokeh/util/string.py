@@ -93,7 +93,7 @@ def nice_join(seq: Iterable[str], sep: str = ", ", conjuction: str = "or") -> st
 
 def snakify(name: str, sep: str = "_") -> str:
     ''' Convert CamelCase to snake_case. '''
-    name = re.sub("([A-Z]+)([A-Z][a-z])", r"\1%s\2" % sep, name)
+    name = re.sub("([A-Z])([A-Z][a-z])", r"\1%s\2" % sep, name)
     name = re.sub("([a-z\\d])([A-Z])", r"\1%s\2" % sep, name)
     return name.lower()
 
